@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Job Dashboard — Sanjana Shedbale</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #F7F5F0;
+      --surface: #FFFFFF;
+      --border: #E2DDD6;
+      --text: #1C1917;
+      --muted: #78716C;
+      --accent: #C2410C;
+      --accent-light: #FFF7ED;
+      --accent-border: #FDBA74;
+      --green: #15803D;
+      --green-light: #F0FDF4;
+      --yellow: #B45309;
+      --yellow-light: #FFFBEB;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header .brand h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+    }
+
+    header .brand p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .api-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .api-input-wrap input {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      width: 240px;
+      outline: none;
+    }
+
+    .api-input-wrap input:focus { border-color: var(--accent); }
+
+    .btn-save-key {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 8px 14px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .key-saved {
+      font-size: 0.78rem;
+      color: var(--green);
+      font-weight: 500;
+      display: none;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+
+    .input-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 28px;
+    }
+
+    .input-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+
+    .input-section .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .field input, .field textarea {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    .field input:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { min-height: 160px; }
+    .field-full { grid-column: 1 / -1; }
+
+    .btn-analyze {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 14px 32px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-analyze:hover { background: #9A3412; }
+    .btn-analyze:active { transform: scale(0.98); }
+    .btn-analyze:disabled { background: #ccc; cursor: not-allowed; }
+
+    .results { display: none; }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      animation: fadeUp 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    .result-card:nth-child(1) { animation-delay: 0.05s; }
+    .result-card:nth-child(2) { animation-delay: 0.1s; }
+    .result-card.full-width { grid-column: 1 / -1; animation-delay: 0.15s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-label .icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .score-display {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .score-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 4rem;
+      line-height: 1;
+    }
+
+    .score-number.high { color: var(--green); }
+    .score-number.mid { color: var(--yellow); }
+    .score-number.low { color: var(--accent); }
+
+    .score-label { font-size: 0.85rem; color: var(--muted); padding-bottom: 8px; }
+
+    .score-bar-wrap {
+      background: var(--border);
+      border-radius: 99px;
+      height: 6px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    .score-bar.high { background: var(--green); }
+    .score-bar.mid { background: var(--yellow); }
+    .score-bar.low { background: var(--accent); }
+
+    .score-reasoning { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+    .decision-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .decision-badge.apply { background: var(--green-light); color: var(--green); }
+    .decision-badge.skip { background: #FEF2F2; color: #DC2626; }
+    .decision-badge.maybe { background: var(--yellow-light); color: var(--yellow); }
+
+    .gap-list { list-style: none; }
+    .gap-list li {
+      font-size: 0.88rem;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      line-height: 1.5;
+    }
+    .gap-list li:last-child { border-bottom: none; }
+    .gap-icon { flex-shrink: 0; margin-top: 2px; }
+
+    .resume-output {
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .resume-output::-webkit-scrollbar { width: 4px; }
+    .resume-output::-webkit-scrollbar-track { background: var(--bg); }
+    .resume-output::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    .copy-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+      margin-top: 14px;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { border-color: var(--text); color: var(--text); }
+
+    .network-list { list-style: none; }
+    .network-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .network-list li:last-child { border-bottom: none; }
+    .network-list li strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
+    .loading-state {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .loading-dots span {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .loading-state p { font-size: 0.9rem; color: var(--muted); }
+
+    .error-msg {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #DC2626;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 8px;
+      width: fit-content;
+    }
+
+    .tab-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    @media (max-width: 640px) {
+      header { padding: 16px 20px; flex-direction: column; gap: 12px; align-items: flex-start; }
+      main { padding: 0 16px; margin: 24px auto; }
+      .input-row { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr; }
+      .result-card.full-width { grid-column: 1; }
+      .api-input-wrap input { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Job Dashboard</h1>
+    <p>Sanjana Shedbale · PM Job Search</p>
+  </div>
+  <div class="api-input-wrap">
+    <input type="password" id="apiKeyInput" placeholder="Enter Anthropic API key…"/>
+    <button class="btn-save-key" onclick="saveKey()">Save</button>
+    <span class="key-saved" id="keySaved">✓ Key saved</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="input-section">
+    <h2>Analyze a Role</h2>
+    <p class="subtitle">Paste a job description to get an instant fit score, resume tailoring, gap analysis, and networking strategy.</p>
+
+    <div class="input-row">
+      <div class="field field-full">
+        <label>Job Description</label>
+        <textarea id="jobDesc" placeholder="Paste the full job description here…"></textarea>
+      </div>
+      <div class="field">
+        <label>Company Name</label>
+        <input type="text" id="company" placeholder="e.g. DoorDash"/>
+      </div>
+      <div class="field">
+        <label>Role Title</label>
+        <input type="text" id="roleTitle" placeholder="e.g. Senior Product Manager"/>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="btn-analyze" onclick="analyze()" id="analyzeBtn">
+      <span>Analyze Role</span>
+      <span>→</span>
+    </button>
+  </div>
+
+  <div class="loading-state" id="loadingState">
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <p>Analyzing role against your background…</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-grid">
+
+      <div class="result-card" id="scoreCard">
+        <div class="card-label">
+          <div class="icon" style="background:#FFF7ED;">🎯</div>
+          Fit Score
+        </div>
+        <div class="score-display">
+          <div class="score-number" id="scoreNum">—</div>
+          <div class="score-label">out of 100</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar" id="scoreBar" style="width:0%"></div>
+        </div>
+        <div id="decisionBadge"></div>
+        <div class="score-reasoning" id="scoreReason"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-label">
+          <div class="icon" style="background:#FEF2F2;">⚡</div>
+          Gap Analysis
+        </div>
+        <ul class="gap-list" id="gapList"></ul>
+      </div>
+
+      <div class="result-card full-width">
+        <div class="card-label">
+          <div class="icon" style="background:#F0FDF4;">📄</div>
+          Tailored Resume
+        </div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab(event,'bullets')">Suggested Bullets</button>
+          <button class="tab-btn" onclick="switchTab(event,'summary')">Summary Rewrite</button>
+        </div>
+        <div class="tab-panel active" id="tab-bullets">
+          <div class="resume-output" id="resumeBullets"></div>
+          <button class="copy-btn" onclick="copyText('resumeBullets', this)">Copy bullets</button>
+        </div>
+        <div class="tab-panel" id="tab-summary">
+          <div class="resume-output" id="resumeSummary"></div>
+          <button class="copy-btn" onclick="copyText('resumeSummary', this)">Copy summary</button>
+        </div>
+      </div>
+
+      <div class="result-card full-width">
+        <div class="card-label">
+          <div class="icon" style="background:#EFF6FF;">🤝</div>
+          Networking Strategy
+        </div>
+        <ul class="network-list" id="networkList"></ul>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const RESUME = `SANJANA SHEDBALE
+(919) 537-2364 | shedbalesanjana@gmail.com | linkedin.com/in/sanjana-shedbale
+
+WALMART INC. — Hoboken, NJ
+Principal Product Manager – Customer Data & Identity (2025–Present)
+• Led product strategy for customer identity platform, identifying 50M+ customers and enabling $1B+ in omnichannel personalization revenue
+• Managed prioritization across 20+ initiatives; deferred 8 projects to accelerate platform delivery by 2 quarters
+• Launched identity capture features with Legal/Privacy compliance; improved sales traceability by 3.2%
+• Increased customer opt-in rates 35% via A/B experiments on enrollment flows and value messaging
+
+Senior Manager, Strategy & Operations – Last Mile Delivery (2023–2024)
+• Led driver experience initiatives for Spark Driver platform; reduced support costs 5% YoY, improved driver NPS 10 pts
+• Built data-driven business cases for 10+ features; reduced returns 3.4%, improved on-time delivery 0.7%
+• Built monitoring/alerting framework on event-level delivery data; cut support contacts by 25K/month
+
+CHORUS (f.k.a LYFLYNKS) — MBA Consultant (2022)
+• Developed GTM strategy targeting $3M ARR; conducted 20+ industry interviews for differentiation strategy
+
+ERNST AND YOUNG — Risk Analyst (2017–2020)
+• Built risk models for top 5 US banks; resolved data quality issues saving $2.3M annually
+
+EDUCATION: UNC Kenan-Flagler MBA (2023) · St. Xavier's College B.S. Mathematics (2017)
+SKILLS: Product Strategy, Data Governance, A/B Testing, SQL, Tableau, BigQuery, Figma, JIRA`;
+
+  let apiKey = '';
+
+  function saveKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val) return;
+    apiKey = val;
+    document.getElementById('keySaved').style.display = 'inline';
+    document.getElementById('apiKeyInput').value = '••••••••••••••••';
+  }
+
+  function switchTab(e, tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    e.target.classList.add('active');
+  }
+
+  function copyText(id, btn) {
+    navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    });
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function analyze() {
+    document.getElementById('errorMsg').style.display = 'none';
+
+    const jd = document.getElementById('jobDesc').value.trim();
+    const company = document.getElementById('company').value.trim();
+    const role = document.getElementById('roleTitle').value.trim();
+
+    if (!apiKey) return showError('Please enter your Anthropic API key at the top and click Save.');
+    if (!jd) return showError('Please paste a job description.');
+
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+
+    const prompt = `You are a senior PM career coach. Analyze this job against the candidate resume and return ONLY a JSON object, no other text.
+
+RESUME:
+${RESUME}
+
+JOB:
+Company: ${company || 'Not specified'}
+Role: ${role || 'Not specified'}
+Description: ${jd}
+
+Return this exact JSON structure:
+{
+  "score": <0-100 integer>,
+  "decision": <"Strong Apply" | "Apply" | "Maybe" | "Skip">,
+  "scoreReason": "<2-3 sentences explaining the score using specific resume details>",
+  "gaps": [
+    {"gap": "<specific missing skill or experience>", "severity": "<high|medium|low>", "fix": "<concrete action to address>"}
+  ],
+  "resumeBullets": "<4-5 resume bullets using candidate's ACTUAL experience reframed for this role, each starting with • on a new line>",
+  "resumeSummary": "<2-3 sentence professional summary tailored specifically to this company and role>",
+  "networking": [
+    {"who": "<specific role/title to target at this company>", "why": "<why this person>", "message": "<1-2 sentence personalized outreach opener>"}
+  ]
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'API request failed');
+
+      const raw = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(raw);
+      renderResults(parsed);
+
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('analyzeBtn').disabled = false;
+      showError('Error: ' + err.message);
+    }
+  }
+
+  function renderResults(d) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+
+    const score = d.score;
+    const cls = score >= 70 ? 'high' : score >= 45 ? 'mid' : 'low';
+    document.getElementById('scoreNum').textContent = score;
+    document.getElementById('scoreNum').className = 'score-number ' + cls;
+    document.getElementById('scoreBar').className = 'score-bar ' + cls;
+    setTimeout(() => document.getElementById('scoreBar').style.width = score + '%', 100);
+    document.getElementById('scoreReason').textContent = d.scoreReason;
+
+    const dMap = { 'Strong Apply': 'apply', 'Apply': 'apply', 'Maybe': 'maybe', 'Skip': 'skip' };
+    document.getElementById('decisionBadge').innerHTML =
+      `<div class="decision-badge ${dMap[d.decision] || 'maybe'}">${d.decision}</div>`;
+
+    const icons = { high: '🔴', medium: '🟡', low: '🟢' };
+    document.getElementById('gapList').innerHTML = d.gaps.map(g =>
+      `<li><span class="gap-icon">${icons[g.severity] || '⚪'}</span><span><strong>${g.gap}</strong> — ${g.fix}</span></li>`
+    ).join('');
+
+    document.getElementById('resumeBullets').textContent = d.resumeBullets;
+    document.getElementById('resumeSummary').textContent = d.resumeSummary;
+
+    document.getElementById('networkList').innerHTML = d.networking.map(n =>
+      `<li><strong>${n.who}</strong><span style="color:var(--muted);font-size:0.82rem;display:block;margin-bottom:4px;">${n.why}</span>${n.message}</li>`
+    ).join('');
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
